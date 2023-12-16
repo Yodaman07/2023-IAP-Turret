@@ -20,7 +20,7 @@ public class ProtoTurret extends CommandBase {
     //start slowing down turret 10 degrees from limit switch
     public boolean manualControl = true;
     public XboxController controller;
-    PIDController pid = new PIDController(0,0,0);
+    PIDController pid = new PIDController(0.01,0,0);
 
     public ProtoTurret(Turret turret, PhotonVision photonVision, XboxController controller) {
         this.controller = controller;
@@ -60,47 +60,42 @@ public class ProtoTurret extends CommandBase {
     @Override
     public void execute() {
         turret.resetEncoders();
-        manualControl = checkManualControl();
 
-        if (!manualControl) {
-            while (!photonVision.targetExists()) { //All code should run while the target has not yet been found
-                while (!turret.getLimitValue("r") && !turret.getLimitValue("l")) {
-                    SmartDashboard.putNumber("Speed", turretSpeed);
-                    SmartDashboard.putNumber("Sign", turretSign);
-                    turret.rotateTurret(turretSpeed * turretSign);
 
-                    double angle = turret.getTicks() * 4;
-                    if ((0 <= angle && angle <= threshold) || (180 - threshold <= angle && angle <= 180)) {
-                        turretSpeed = 0.1;
-                    } else {
-                        turretSpeed = 0.3;
-                    }
+        while (!photonVision.targetExists()) { //All code should run while the target has not yet been found
+            while (!turret.getLimitValue("r") && !turret.getLimitValue("l")) {
+                SmartDashboard.putNumber("Speed", turretSpeed);
+                SmartDashboard.putNumber("Sign", turretSign);
+                turret.rotateTurret(turretSpeed * turretSign);
 
-                    if (checkManualControl()){
-                        break;
-                    }
+                double angle = turret.getTicks() * 4;
+                if ((0 <= angle && angle <= threshold) || (180 - threshold <= angle && angle <= 180)) {
+                    turretSpeed = 0.1;
+                } else {
+                    turretSpeed = 0.3;
                 }
-                if (checkManualControl()){
+
+                if (photonVision.targetExists()){
+                    turret.rotateTurret(0);
                     break;
                 }
-                turretSign *= -1;
-                turret.rotateTurret(turretSpeed * turretSign);
             }
-            if(photonVision.targetExists()){
+            if (photonVision.targetExists()){
                 turret.rotateTurret(0);
-                SmartDashboard.putBoolean("Target Exists: ", photonVision.targetExists());
+                break;
             }
-//            if(photonVision.targetExists()){
-//
-////                double speed = pid.calculate(photonVision.getYaw());
-////                turret.rotateTurret(-speed);
-//            }
-        } else {
-            double axis = controller.getRawAxis(0);
-            SmartDashboard.putNumber("axis", axis);
-            turret.rotateTurret(axis * -1.002);
+
+            turretSign *= -1;
+            turret.rotateTurret(0.5 * turretSign);
         }
+
+//        if(photonVision.targetExists()){
+//                double speed = pid.calculate(photonVision.getYaw());
+//                turret.rotateTurret(-speed);
+//        }
     }
+
+
 
 
     @Override

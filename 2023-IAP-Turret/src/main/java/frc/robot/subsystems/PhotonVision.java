@@ -29,6 +29,8 @@ public class PhotonVision extends SubsystemBase {
     }
 
     public boolean targetExists(){
+        result = photonCamera.getLatestResult();
+        hasTarget = result.hasTargets();
         return hasTarget;
     }
     public double getYaw(){
@@ -46,9 +48,7 @@ public class PhotonVision extends SubsystemBase {
 
     @Override
     public void periodic() {
-        result = photonCamera.getLatestResult();
-        hasTarget = result.hasTargets();
-        if (hasTarget){
+        if (this.targetExists()){
             target = result.getBestTarget();
             yaw = target.getYaw();
             pitch = target.getPitch();
@@ -56,7 +56,7 @@ public class PhotonVision extends SubsystemBase {
             skew = target.getSkew();
             //Skew doesn't work with April-Tags
         }
-
+        SmartDashboard.putBoolean("Target", this.targetExists());
         SmartDashboard.putNumber("Yaw", yaw);
         SmartDashboard.putNumber("Pitch", pitch);
         SmartDashboard.putNumber("Area", area);
